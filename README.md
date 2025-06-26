@@ -6,12 +6,6 @@
   </a>
 </p>
 
-<h1 align="center" style="font-size:2.5em;">Behavioural Finance Simulator</h1>
-
-<p align="center">
-  <img src="streamlit_app/screenshot.png" alt="App Screenshot" width="800"/>
-</p>
-
 ## 🚀 Overview
 
 This project enables me and whoever is interested to:
