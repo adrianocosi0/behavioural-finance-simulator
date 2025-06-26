@@ -281,6 +281,19 @@ series_dict = {
 
 # --- Select Series to Plot ---
 st.header("3. Select behavioural strategies to compare")
+st.markdown(
+    """
+    <div style="position: relative; margin-bottom: 1em;">
+        <span style="font-size: 2em; color: #FF5733; font-weight: bold;">
+            ⬆️⬅️
+        </span>
+        <span style="font-size: 1.1em; color: #FF5733; font-weight: bold; margin-left: 0.5em;">
+            <u>Simulation Parameters:</u> Use the <b>SIDEBAR</b> to change strategies!
+        </span>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 series_options = list(series_dict.keys())
 selected_series = st.multiselect(
     "Select strategies to plot",
