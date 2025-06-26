@@ -1,10 +1,10 @@
 # Behavioural Finance Simulations
 
-**Author:** Adriano Cosi  
-**Description:**  
-A Python package and interactive Streamlit app for simulating portfolio strategies and analyzing behavioural finance biases in investment decisions.
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://behavioural-finance-simulator-xnxirrqvttgw7cicbyduzi.streamlit.app/)
 
----
+# Behavioural Finance Simulator
+
+![App Screenshot](streamlit_app/screenshot.png)
 
 ## 🚀 Overview
 
