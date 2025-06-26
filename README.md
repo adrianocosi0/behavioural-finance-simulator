@@ -1,10 +1,16 @@
 # Behavioural Finance Simulations
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://behavioural-finance-simulator-xnxirrqvttgw7cicbyduzi.streamlit.app/)
+<p align="center">
+  <a href="https://behavioural-finance-simulator-xnxirrqvttgw7cicbyduzi.streamlit.app/" target="_blank">
+    <img src="https://static.streamlit.io/badges/streamlit_badge_black_white.svg" alt="Open in Streamlit" style="height:60px;">
+  </a>
+</p>
 
-# Behavioural Finance Simulator
+<h1 align="center" style="font-size:2.5em;">Behavioural Finance Simulator</h1>
 
-![App Screenshot](streamlit_app/screenshot.png)
+<p align="center">
+  <img src="streamlit_app/screenshot.png" alt="App Screenshot" width="800"/>
+</p>
 
 ## 🚀 Overview
 
