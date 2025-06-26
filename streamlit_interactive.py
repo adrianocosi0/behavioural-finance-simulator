@@ -6,6 +6,28 @@ import pandas as pd
 import plotly.graph_objs as go
 from behavioural_finance_simulations import simulation_helpers as sh
 
+# --- Mobile detection and plotly rendering helpers ---
+def is_mobile_browser():
+    """Detect if running on a mobile browser by checking the user agent."""
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        ctx = get_script_run_ctx()
+        if ctx and hasattr(ctx, "user_agent") and ctx.user_agent:
+            ua = ctx.user_agent.lower()
+            mobile_signals = ["mobi", "android", "iphone", "ipad", "phone"]
+            return any(signal in ua for signal in mobile_signals)
+    except Exception:
+        pass
+    return False
+
+def show_plotly(fig, key=None, height=None):
+    """Show Plotly as static image on mobile, interactive on desktop."""
+    if is_mobile_browser():
+        img_bytes = fig.to_image(format="png", scale=2, height=height)
+        st.image(img_bytes)
+    else:
+        st.plotly_chart(fig, use_container_width=True)
+
 def set_default_margins(fig: go.Figure, margin=dict(l=10, r=10, t=35, b=10)):
     fig.update_layout(margin=margin)
     return fig
@@ -122,7 +144,7 @@ with col2:
         showlegend=False,
         height=260,  # makes it more compact; adjust as you like
     )
-    st.plotly_chart(pie_chart, use_container_width=True)
+    show_plotly(pie_chart, key="pie_chart", height=260)
     
 # After starting_weights is computed and before or after the pie chart:
 agg_idx = asset_names.index("AGG") if "AGG" in asset_names else None
@@ -198,7 +220,7 @@ if show_mini:
         template="plotly_white"
     )
     mini_fig = set_default_margins(mini_fig)
-    st.plotly_chart(mini_fig, use_container_width=True)
+    show_plotly(mini_fig, key="mini_fig", height=240)
 
 # --- User Controls ---
 rebalance_freq = st.sidebar.selectbox(
@@ -288,7 +310,7 @@ st.markdown(
             ⬆️⬅️
         </span>
         <span style="font-size: 1.1em; color: #FF5733; font-weight: bold; margin-left: 0.5em;">
-            <u>Simulation Parameters:</u> Use the <b>SIDEBAR</b> to change strategies!
+            <u>Simulation Parameters:</u> Use the <b>SIDEBAR</b> to adapt strategies!
         </span>
     </div>
     """,
@@ -354,7 +376,7 @@ fig.update_layout(
     template="plotly_white"
 )
 fig = set_default_margins(fig)
-st.plotly_chart(fig, use_container_width=True)
+show_plotly(fig, key="main_fig")
 
 # Display final accumulated wealth for each strategy
 st.subheader("🏁 Final Accumulated Wealth")
