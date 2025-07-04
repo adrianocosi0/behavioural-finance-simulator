@@ -252,9 +252,9 @@ recovery_threshold = st.sidebar.slider(
 def cached_buy_and_hold(prices, weights, rebalance_freq=None):
     return sh.buy_and_hold(prices, weights, rebalance_freq=rebalance_freq)
 
-@st.cache_data
-def cached_simulate_recency_bias(prices, weights, lookback_window, recency_strength, temperature, extreme):
-    return sh.simulate_recency_bias(prices, weights, lookback_window, recency_strength, temperature, extreme)
+def cached_simulate_recency_bias(prices, weights, lookback_window, recency_strength, temperature, extreme=False):
+    return sh.simulate_recency_bias(prices, weights, lookback_window=lookback_window, recency_strength=recency_strength, 
+    temperature=temperature, extreme=False)
 
 @st.cache_data
 def cached_simulate_panic(prices, weights, panic_drawdown, rebalance_freq):
@@ -268,7 +268,8 @@ def cached_simulate_panic_and_reentry(prices, weights, panic_drawdown, min_reent
 result_bh = cached_buy_and_hold(filtered_prices, starting_weights)
 result_rebal = cached_buy_and_hold(filtered_prices, starting_weights, rebalance_freq=rebalance_map[rebalance_freq])
 result_recency = cached_simulate_recency_bias(
-    filtered_prices, starting_weights, lookback_window, recency_strength, temperature, extreme=False
+    filtered_prices, starting_weights, lookback_window=lookback_window, extreme=False, recency_strength=recency_strength, 
+    temperature=temperature
 )
 result_panic = cached_simulate_panic(filtered_prices, starting_weights, panic_drawdown, rebalance_map[rebalance_freq])
 result_panic_reentry = cached_simulate_panic_and_reentry(
