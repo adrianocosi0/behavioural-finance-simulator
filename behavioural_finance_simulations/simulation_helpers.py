@@ -236,23 +236,39 @@ def soft_recency_bias_softmax_blend_with_anchor(
     temperature: Softmax sharpness (lower = more extreme bias)
     anchor_weights: Series with asset weights, index matching prices.columns, sums to 1
     """
-    # Recent returns
-    recent_returns = (prices.iloc[-1] / prices.iloc[-lookback_window]) - 1
-
-    # Softmax transformation
-    exp_returns = np.exp(recent_returns / temperature)
-    softmax_weights = exp_returns / exp_returns.sum()
-
-    # Use anchor weights (strategic allocation) as baseline
     if anchor_weights is None:
         anchor_weights = pd.Series(
             np.ones(len(prices.columns)) / len(prices.columns),
             index=prices.columns
         )
+    
+
+    # Not enough data to compute returns — fallback to anchor weights
+    if len(prices) < lookback_window:
+        return anchor_weights.copy()
+
+    # Recent returns
+    recent_returns = (prices.iloc[-1] / prices.iloc[-lookback_window]) - 1
+    
+
+
+    # Handle missing data in returns
+    recent_returns = recent_returns.replace([np.inf, -np.inf], np.nan).dropna()
+
+    # If too many NaNs, fallback to anchor
+    if recent_returns.empty:
+        return anchor_weights.copy()
+
+    # Softmax transformation
+    exp_returns = np.exp(recent_returns / temperature)
+    softmax_weights = exp_returns / exp_returns.sum()
+
+    # Reindex to ensure matching assets (fill missing ones with anchor)
+    softmax_weights = softmax_weights.reindex(prices.columns).fillna(0)
 
     # Blend
     weights = recency_strength * softmax_weights + (1 - recency_strength) * anchor_weights
-    weights = weights / weights.sum()  # Ensure weights sum to 1 (for numeric stability)
+    weights = weights / weights.sum()  # Normalize
     return weights
 
 def simulate_recency_bias(
