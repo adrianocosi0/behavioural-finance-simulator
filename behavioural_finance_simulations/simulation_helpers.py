@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 
 def buy_and_hold(prices: pd.DataFrame, weights: np.ndarray, rebalance_freq=None) -> dict:
     """
@@ -105,6 +106,52 @@ def compute_portfolio_vol(weights, asset_names, vols, corr):
                 cov[i, j] = vols[asset_names[i]] * vols[asset_names[j]] * rho
     port_var = weights @ cov @ weights
     return np.sqrt(port_var)
+    
+def var_gaussian(portfolio_returns, level=5, modified=True, period = 1):
+    """
+    Returns the Parametric Gauusian VaR of a Series or DataFrame
+    If "modified" is True, then the modified VaR is returned,
+    using the Cornish-Fisher modification
+    """
+    # compute the Z score assuming it was Gaussian
+    z = norm.ppf(level/100)
+    if modified:
+        # modify the Z score based on observed skewness and kurtosis
+        s = portfolio_returns.skew()
+        k = portfolio_returns.kurtosis()
+        z = (z +
+                (z**2 - 1)*s/6 +
+                (z**3 -3*z)*(k)/24 -
+                (2*z**3 - 5*z)*(s**2)/36
+            )
+    return -(portfolio_returns.mean()*period + z*portfolio_returns.std()*np.sqrt(period))
+
+def compute_cdarr(returns, alpha=0.05):
+    # Conditional drawdown at risk
+    cum_returns = (1 + returns).cumprod()
+    running_max = cum_returns.cummax()
+    drawdowns = (cum_returns - running_max) / running_max
+    drawdowns = drawdowns.abs()
+    # Select the worst alpha% drawdowns
+    threshold = drawdowns.quantile(1 - alpha)
+    cdarr = drawdowns[drawdowns >= threshold].mean()
+    return cdarr
+
+def rolling_max_drawdown(returns, window=252):
+    cum_returns = (1 + returns).cumprod()
+    # Calculate rolling max for the window
+    roll_max = cum_returns.rolling(window, min_periods=1).max()
+    roll_drawdown = (cum_returns - roll_max) / roll_max
+    # The rolling minimum drawdown in each window is the max drawdown
+    max_dd = roll_drawdown.rolling(window, min_periods=1).min()
+    return max_dd
+
+def compute_cdarr_rolling_mdd(returns, window=252, alpha=0.05):
+    mdds = rolling_max_drawdown(returns, window)
+    # Take the worst alpha% of rolling MDDs
+    threshold = mdds.quantile(1 - alpha)
+    cdarr = mdds[mdds <= threshold].mean()  # MDDs are negative
+    return abs(cdarr)  # Return as positive drawdown
 
 def estimate_max_drawdown_from_allocation(weights, asset_names, asset_vols, asset_corr):
     sigma = compute_portfolio_vol(weights, asset_names, asset_vols, asset_corr)
@@ -129,7 +176,7 @@ def simulate_panic_and_reentry(
     cash_value = None
     panic_day = None
     prev_peak = None
-    never_panicked = True
+    last_entry_idx = 0
 
     # Extra: Track what value would have been if stayed in market
     would_be_value = value
@@ -143,18 +190,17 @@ def simulate_panic_and_reentry(
 
         if in_market:
             value = value * (1 + (day_return * current_weights).sum())
-            running_max = portfolio_value.iloc[:i].max() if i > 0 else value
+            running_max = portfolio_value.iloc[last_entry_idx:i].max() if i > 0 else value
             drawdown = (value - running_max) / running_max if running_max > 0 else 0
             portfolio_value.iloc[i] = value
 
-            if drawdown < panic_drawdown and never_panicked:
+            if drawdown < panic_drawdown:
                 # Panic! Sell all, move to cash
                 in_market = False
                 cash_value = value
                 panic_day = date
                 prev_peak = running_max
                 would_be_value = value  # reset virtual tracker to cash value
-                never_panicked = False
         else:
             # Out of market: portfolio stays in cash
             portfolio_value.iloc[i] = cash_value
@@ -165,8 +211,12 @@ def simulate_panic_and_reentry(
             if (date - panic_day).days >= min_reentry_days and would_be_value >= (recovery_threshold * prev_peak):
                 in_market = True
                 value = cash_value  # Re-enter at cash value
+                panic_day = None
+                prev_peak = value
                 last_rebalance = date
                 portfolio_value.iloc[i] = value  # update on re-entry day
+                would_be_value = value
+                last_entry_idx = i
 
     return {'portfolio_value': portfolio_value}
     
@@ -248,4 +298,3 @@ def simulate_recency_bias(
         value = value * (1 + (day_return * current_weights).sum())
         portfolio_value.iloc[i] = value
     return {'portfolio_value': portfolio_value}
-
