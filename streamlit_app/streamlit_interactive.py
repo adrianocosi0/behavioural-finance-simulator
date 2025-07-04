@@ -134,16 +134,21 @@ st.markdown(f"- <span style='color:#1f77b4;font-weight:bold'>Bonds (AGG)</span>:
 st.markdown(f"- <span style='color:#2ca02c;font-weight:bold'>Equities (SPY + IJS)</span>: {eq_pct*100:.1f}%", unsafe_allow_html=True)
 
 
-est_mdd = sh.estimate_max_drawdown_from_allocation(starting_weights, asset_names, asset_vols, asset_corr)
+#est_mdd = sh.estimate_max_drawdown_from_allocation(starting_weights, asset_names, asset_vols, asset_corr)
+#est_mdd_cornfish = sh.var_gaussian(prices.pct_change().dropna() @ starting_weights, level=1, period = 252)
+est_mdd_cdarr = sh.compute_cdarr(prices.pct_change().dropna() @ starting_weights)
+est_mdd_cdarr_rolling = sh.compute_cdarr_rolling_mdd(prices.pct_change().dropna() @ starting_weights)
 st.markdown(
     f"""
     <div style="border-left: 4px solid #d62728; padding: 0.5em 1em; background: #f9f9fa; border-radius: 6px;">
-        <span style="font-size: 1.3em;">📉 <b>Estimated Maximum Drawdown (1 year):</b></span><br>
-        For your current allocation, a typical portfolio like this might experience a maximum drawdown of
-        <span style="color:#d62728; font-weight:bold;">{est_mdd*100:.1f}%</span> in a bad year. Are you ready
-        to possibly lose
-        <span style="color:#d62728; font-weight:bold;">{est_mdd*initial_investment:.2f} Euros</span> in a year?<br>
-        <span style="color: #555;">This is a quick risk estimate based on your asset mix and long-term market statistics.</span>
+        <span style="font-size: 1.3em;">📉 <b>Estimated Maximum Drawdown Risk</b></span><br>
+        With your current allocation, a portfolio like this could experience an average maximum drawdown of
+        <span style="color:#d62728; font-weight:bold;">{est_mdd_cdarr_rolling*100:.1f}%</span> in a typical bad year
+        and up to <span style="color:#d62728; font-weight:bold;">{est_mdd_cdarr*100:.1f}%</span> in an extreme market crash.<br>
+        For your initial investment, this means you could potentially see a decline of around
+        <span style="color:#d62728; font-weight:bold;">{est_mdd_cdarr_rolling*initial_investment:.2f} Euros</span> in a bad year,
+        and up to <span style="color:#d62728; font-weight:bold;">{est_mdd_cdarr*initial_investment:.2f} Euros</span> in a crash scenario.<br>
+        <span style="color: #555;">These are quick risk estimates based on your current asset allocation.</span>
     </div>
     """,
     unsafe_allow_html=True
